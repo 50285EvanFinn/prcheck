@@ -1,0 +1,13 @@
+# Typescript
+
+node_modules/
+Thumbs.db
+*.swp
+*.swo
+*.tsbuildinfo
+*.log
+coverage/
+.next/
+.cache/
+npm-debug.log*
+Desktop.ini
