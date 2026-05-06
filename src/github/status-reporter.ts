@@ -54,7 +54,18 @@ export function postCommitStatus(
         logInfo(`Commit status posted: ${payload.state} — ${payload.description}`);
         resolve();
       } else {
-        reject(new Error(`Failed to post commit status: HTTP ${res.statusCode}`));
+        // Collect response body to include in error message for easier debugging
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          const responseBody = Buffer.concat(chunks).toString('utf8').slice(0, 200);
+          reject(
+            new Error(
+              `Failed to post commit status: HTTP ${res.statusCode} — ${responseBody}`
+            )
+          );
+        });
+        return;
       }
       res.resume();
     });
