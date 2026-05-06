@@ -1,24 +1,31 @@
 import { z } from 'zod';
 
+export const LabelConfigSchema = z.object({
+  onSuccess: z.array(z.string()).optional(),
+  onFailure: z.array(z.string()).optional(),
+});
+
 export const ReviewerRuleSchema = z.object({
-  pattern: z.string().describe('Glob or regex pattern matching file paths'),
-  reviewers: z.array(z.string()).min(1).describe('GitHub usernames to assign'),
-  minApprovals: z.number().int().positive().default(1),
+  pattern: z.string(),
+  reviewers: z.array(z.string()).min(1),
+  minCount: z.number().int().positive().optional().default(1),
 });
 
 export const TemplateRuleSchema = z.object({
-  requiredSections: z.array(z.string()).describe('Section headings that must appear in PR body'),
-  minBodyLength: z.number().int().nonneg().default(0),
-  forbiddenPhrases: z.array(z.string()).default([]),
+  requiredSections: z.array(z.string()).optional(),
+  minLength: z.number().int().nonnegative().optional(),
+  forbiddenPhrases: z.array(z.string()).optional(),
 });
 
-export const PrCheckConfigSchema = z.object({
-  version: z.literal(1),
+export const ConfigSchema = z.object({
   template: TemplateRuleSchema.optional(),
-  reviewerRules: z.array(ReviewerRuleSchema).default([]),
-  ignoreLabels: z.array(z.string()).default(['skip-prcheck']),
+  reviewers: z.array(ReviewerRuleSchema).optional(),
+  labels: LabelConfigSchema.optional(),
+  failOnViolation: z.boolean().optional().default(true),
+  postComment: z.boolean().optional().default(true),
 });
 
+export type Config = z.infer<typeof ConfigSchema>;
 export type ReviewerRule = z.infer<typeof ReviewerRuleSchema>;
 export type TemplateRule = z.infer<typeof TemplateRuleSchema>;
-export type PrCheckConfig = z.infer<typeof PrCheckConfigSchema>;
+export type LabelConfig = z.infer<typeof LabelConfigSchema>;

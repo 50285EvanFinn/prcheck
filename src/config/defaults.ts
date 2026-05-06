@@ -1,30 +1,35 @@
-import { PrCheckConfig } from './schema';
+import { Config } from './schema';
 
-/**
- * Returns a minimal valid default configuration.
- * Useful for testing or when a repo opts in without a config file.
- */
-export function getDefaultConfig(): PrCheckConfig {
+export function getDefaultConfig(): Config {
   return {
-    version: 1,
-    template: undefined,
-    reviewerRules: [],
-    ignoreLabels: ['skip-prcheck'],
+    template: {
+      requiredSections: [],
+      minLength: 0,
+      forbiddenPhrases: [],
+    },
+    reviewers: [],
+    labels: {
+      onSuccess: [],
+      onFailure: [],
+    },
+    failOnViolation: true,
+    postComment: true,
   };
 }
 
-/**
- * Merges a partial user config on top of the defaults.
- * Fields not specified by the user fall back to defaults.
- */
-export function mergeWithDefaults(
-  partial: Partial<PrCheckConfig>
-): PrCheckConfig {
+export function mergeWithDefaults(partial: Partial<Config>): Config {
   const defaults = getDefaultConfig();
   return {
     ...defaults,
     ...partial,
-    ignoreLabels: partial.ignoreLabels ?? defaults.ignoreLabels,
-    reviewerRules: partial.reviewerRules ?? defaults.reviewerRules,
+    template: {
+      ...defaults.template,
+      ...(partial.template ?? {}),
+    },
+    reviewers: partial.reviewers ?? defaults.reviewers,
+    labels: {
+      ...defaults.labels,
+      ...(partial.labels ?? {}),
+    },
   };
 }

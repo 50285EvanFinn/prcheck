@@ -1,45 +1,66 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { ValidationResult } from '../rules/validator';
+import { applyValidationLabels } from './label-manager';
+import { LabelConfig } from '../config/schema';
 
-/**
- * Writes key=value pairs to GITHUB_OUTPUT for use in subsequent workflow steps.
- */
-export function setOutput(key: string, value: string): void {
-  const outputFile = process.env.GITHUB_OUTPUT;
-  if (outputFile) {
-    fs.appendFileSync(outputFile, `${key}=${value}\n`, 'utf8');
+export function setOutput(name: string, value: string): void {
+  const core = tryRequireCore();
+  if (core) {
+    core.setOutput(name, value);
   } else {
-    // Fallback for older GitHub Actions runner or local testing
-    process.stdout.write(`::set-output name=${key}::${value}\n`);
+    process.stdout.write(`::set-output name=${name}::${value}\n`);
   }
 }
 
 export function setFailed(message: string): void {
-  process.stdout.write(`::error::${message}\n`);
-  process.exitCode = 1;
+  const core = tryRequireCore();
+  if (core) {
+    core.setFailed(message);
+  } else {
+    process.stderr.write(`::error::${message}\n`);
+    process.exitCode = 1;
+  }
 }
 
 export function logInfo(message: string): void {
-  process.stdout.write(`::notice::${message}\n`);
+  const core = tryRequireCore();
+  if (core) {
+    core.info(message);
+  } else {
+    process.stdout.write(`${message}\n`);
+  }
 }
 
 export function emitValidationOutputs(result: ValidationResult): void {
   setOutput('passed', String(result.passed));
-  setOutput('error_count', String(result.errors.length));
-  setOutput('warning_count', String(result.warnings.length));
+  setOutput('violations', JSON.stringify(result.violations));
+  setOutput('violation_count', String(result.violations.length));
+}
 
-  if (result.errors.length > 0) {
-    setOutput('errors', result.errors.join('|'));
-  } else {
-    setOutput('errors', '');
+export async function applyLabelsIfConfigured(
+  result: ValidationResult,
+  labelConfig: LabelConfig | undefined,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  token: string
+): Promise<void> {
+  if (!labelConfig) return;
+  if (!token) {
+    logInfo('No GITHUB_TOKEN provided; skipping label management.');
+    return;
   }
+  await applyValidationLabels(result.passed, labelConfig, {
+    owner,
+    repo,
+    prNumber,
+    token,
+  });
+}
 
-  if (!result.passed) {
-    setFailed(
-      `PR check failed with ${result.errors.length} error(s). Run prcheck locally for details.`
-    );
-  } else {
-    logInfo('PR check passed.');
+function tryRequireCore(): any {
+  try {
+    return require('@actions/core');
+  } catch {
+    return null;
   }
 }
