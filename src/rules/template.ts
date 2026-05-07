@@ -12,6 +12,14 @@ export interface TemplateField {
   pattern?: string;
 }
 
+/**
+ * Evaluates whether a PR body satisfies the required template fields
+ * defined in the prcheck configuration.
+ *
+ * @param config - The prcheck configuration containing templateFields.
+ * @param prBody - The PR description/body text to evaluate.
+ * @returns A TemplateResult indicating satisfaction status and any missing fields or errors.
+ */
 export function evaluateTemplate(
   config: PrcheckConfig,
   prBody: string
@@ -32,7 +40,16 @@ export function evaluateTemplate(
     if (!field.required) continue;
 
     if (field.pattern) {
-      const regex = new RegExp(field.pattern, 'im');
+      let regex: RegExp;
+      try {
+        regex = new RegExp(field.pattern, 'im');
+      } catch {
+        result.errors.push(
+          `Invalid regex pattern for field '${field.name}': ${field.pattern}`
+        );
+        result.satisfied = false;
+        continue;
+      }
       if (!regex.test(prBody)) {
         result.missingFields.push(field.name);
         result.errors.push(
