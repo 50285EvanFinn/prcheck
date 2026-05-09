@@ -24,6 +24,12 @@ function mockHttpsRequest(
   return { req };
 }
 
+/** Parses the JSON body written to the request from the first write() call. */
+function getWrittenBody(req: { write: jest.Mock }): Record<string, unknown> {
+  const raw = req.write.mock.calls[0][0] as string;
+  return JSON.parse(raw);
+}
+
 afterEach(() => jest.restoreAllMocks());
 
 describe('postCommitStatus', () => {
@@ -59,5 +65,14 @@ describe('postCommitStatus', () => {
     const spy = https.request as jest.Mock;
     const opts = spy.mock.calls[0][0];
     expect(opts.path).toBe('/repos/myorg/myrepo/statuses/deadbeef');
+  });
+
+  it('sends valid JSON body with expected fields', async () => {
+    const { req } = mockHttpsRequest(201);
+    await postCommitStatus('owner', 'repo', 'sha', makeResult(false, ['err1']), 'tok');
+    const body = getWrittenBody(req);
+    expect(body).toHaveProperty('state');
+    expect(body).toHaveProperty('description');
+    expect(body).toHaveProperty('context');
   });
 });
