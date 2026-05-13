@@ -1,6 +1,6 @@
 import { getPRMilestone } from './pr-milestone';
 import { evaluateMilestoneRules, MilestoneRule } from '../rules/milestone';
-import { logInfo } from './action-output';
+import { logInfo, logWarning, logError } from './action-output';
 
 export interface MilestoneRunnerOptions {
   owner: string;
@@ -34,10 +34,10 @@ export async function runMilestoneCheck(
   const { passed, errors, warnings } = evaluateMilestoneRules(milestone, rule);
 
   for (const warning of warnings) {
-    logInfo(`[milestone warning] ${warning}`);
+    logWarning(`[milestone] ${warning}`);
   }
   for (const error of errors) {
-    logInfo(`[milestone error] ${error}`);
+    logError(`[milestone] ${error}`);
   }
 
   return { passed, errors, warnings, milestoneTitle };
