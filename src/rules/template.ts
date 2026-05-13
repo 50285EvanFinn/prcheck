@@ -43,9 +43,10 @@ export function evaluateTemplate(
       let regex: RegExp;
       try {
         regex = new RegExp(field.pattern, 'im');
-      } catch {
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         result.errors.push(
-          `Invalid regex pattern for field '${field.name}': ${field.pattern}`
+          `Invalid regex pattern for field '${field.name}': ${field.pattern} (${message})`
         );
         result.satisfied = false;
         continue;
