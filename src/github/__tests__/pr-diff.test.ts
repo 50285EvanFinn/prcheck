@@ -48,6 +48,13 @@ describe('fetchPRDiff', () => {
     expect(diff.filesChanged).toHaveLength(0);
     expect(diff.totalChanges).toBe(0);
   });
+
+  it('throws when httpsGet rejects', async () => {
+    httpsGetSpy.mockRejectedValue(new Error('Network error'));
+    await expect(
+      fetchPRDiff({ owner: 'acme', repo: 'app', pullNumber: 1, token: 'tok' })
+    ).rejects.toThrow('Network error');
+  });
 });
 
 describe('summarizeDiff', () => {
