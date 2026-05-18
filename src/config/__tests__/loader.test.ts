@@ -28,6 +28,11 @@ describe('findConfigFile', () => {
     writeTempFile(tmpDir, '.prcheck.yml', 'version: 1');
     expect(findConfigFile(tmpDir)).toContain('.prcheck.yml');
   });
+
+  it('finds .prcheck.json', () => {
+    writeTempFile(tmpDir, '.prcheck.json', '{"version": 1}');
+    expect(findConfigFile(tmpDir)).toContain('.prcheck.json');
+  });
 });
 
 describe('loadConfig', () => {
@@ -63,5 +68,11 @@ describe('loadConfig', () => {
 
   it('throws ConfigLoadError when file not found', () => {
     expect(() => loadConfigFromDir(tmpDir)).toThrow(ConfigLoadError);
+  });
+
+  it('throws ConfigLoadError for malformed YAML', () => {
+    // Tabs are not allowed in YAML, which should cause a parse error
+    const filePath = writeTempFile(tmpDir, '.prcheck.yml', 'version: 1\n\t invalid_tab: true');
+    expect(() => loadConfig(filePath)).toThrow(ConfigLoadError);
   });
 });
